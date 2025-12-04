@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>體重紀錄｜169cm</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Chart.js CDN：用來畫體重變化折線圖 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card-bg: #ffffff;
+      --primary: #3056d3;
+      --primary-soft: #e5ebff;
+      --accent: #f97373;
+      --text-main: #1f2933;
+      --text-sub: #6b7280;
+      --border: #e2e8f0;
+      --radius-lg: 16px;
+      --radius-sm: 6px;
+      --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+        "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: radial-gradient(circle at top, #eef2ff 0, #f9fafb 40%, #f5f7fb 100%);
+      color: var(--text-main);
+    }
+
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 26px;
+      margin: 0 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    header h1 span.emoji {
+      font-size: 26px;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-sub);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+      padding: 16px 18px;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-title span.icon {
+      font-size: 18px;
+    }
+
+    /* 基本資訊區 */
+    .profile-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      font-size: 13px;
+      color: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip strong {
+      font-weight: 600;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    @media (max-width: 600px) {
+      .stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .stat-item {
+      background: #f9fafb;
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .stat-tag {
+      font-size: 11px;
+      color: var(--primary);
+      margin-left: 4px;
+    }
+
+    .stat-change-positive {
+      color: #16a34a;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .stat-change-negative {
+      color: var(--accent);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    /* 表格 */
+    .table-wrapper {
+      max-height: 320px;
+      overflow: auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: #f9fafb;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 260px;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: #e5ebff;
+      z-index: 1;
+    }
+
+    th,
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    th {
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+
+    tr.highlight td {
+      background: #fef3c7;
+      font-weight: 600;
+    }
+
+    /* 圖表卡片 */
+    #weightChart {
+    width: 100%;
+    max-height: 260px;
+    min-height: 190px;
+    }
+
+    @media (max-width: 768px) {
+    #weightChart {
+        max-height: 230px;
+        min-height: 170px;
+    }
+    }
+
+    @media (max-width: 480px) {
+    #weightChart {
+        max-height: 210px;
+        min-height: 160px;
+    }
+    }
+
+
+    .chart-legend {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-sub);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-right: 4px;
+      border: 1px solid rgba(15, 23, 42, 0.3);
+      background: #ffffff; /* 真實顏色由 JS 動態塞 */
+    }
+
+    footer {
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--text-sub);
+      text-align: center;
+    }
+    /* ========= 手機 / 平板 RWD ========= */
+
+/* 平板以下（約 iPad / 一般手機橫向） */
+@media (max-width: 768px) {
+  body {
+    background: #f5f7fb; /* 手機就不要太強的漸層，乾淨一點 */
+  }
+
+  .page {
+    padding: 16px 12px 28px;
+  }
+
+  header {
+    margin-bottom: 16px;
+  }
+
+  header h1 {
+    font-size: 22px;
+  }
+
+  header p {
+    font-size: 13px;
+  }
+
+  .card {
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .profile-row {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .chip {
+    font-size: 12px;
+    padding: 5px 9px;
+  }
+
+  .stat-item {
+    padding: 7px 8px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .stat-value {
+    font-size: 15px;
+  }
+
+  .stat-tag {
+    font-size: 10px;
+  }
+
+  .chart-legend {
+    font-size: 11px;
+  }
+
+  .table-wrapper {
+    max-height: 260px; /* 手機不要太高，要讓上面的卡片也看得到 */
+  }
+
+  th,
+  td {
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+}
+
+/* 小手機（iPhone SE / 8 size） */
+@media (max-width: 480px) {
+  .page {
+    padding: 14px 10px 24px;
+  }
+
+  header h1 {
+    font-size: 20px;
+  }
+
+  header p {
+    font-size: 12px;
+  }
+
+  .grid {
+    gap: 12px;
+  }
+
+  .card {
+    padding: 12px 10px;
+  }
+
+  .profile-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chip {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr; /* 三個小卡片改成一列一個，往下排 */
+    gap: 6px;
+  }
+
+  .stat-item {
+    padding: 6px 8px;
+  }
+
+  footer {
+    font-size: 10px;
+  }
+
+  /* 表格在手機上更貼邊一點 */
+  .table-wrapper {
+    border-radius: 10px;
+  }
+
+  table {
+    font-size: 12px;
+  }
+
+  th,
+  td {
+    padding: 6px 6px;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>
+        <span class="emoji">📉</span>
+        體重紀錄儀表板
+      </h1>
+      <p>用小小的折線圖，記錄每一次對自己的負責。</p>
+    </header>
+
+    <div class="grid">
+      <!-- 左：基本資料 + 整體狀況 -->
+      <section class="card">
+        <h2 class="card-title">
+          <span class="icon">👤</span>
+          個人與進度概況
+        </h2>
+
+        <div class="profile-row">
+          <span class="chip">
+            身高：<strong id="heightText">169 cm</strong>
+          </span>
+          <span class="chip">
+            最近體重：<strong id="latestWeightText">-- kg</strong>
+          </span>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-item">
+            <div class="stat-label">目前 BMI</div>
+            <div class="stat-value">
+              <span id="bmiValue">--</span>
+              <span class="stat-tag" id="bmiTag"></span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">從起點變化</div>
+            <div class="stat-value">
+              <span id="diffFromStart">-- kg</span>
+            </div>
+            <div id="diffFromStartText" class="stat-change-positive"></div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">紀錄筆數</div>
+            <div class="stat-value" id="recordCount">-- 筆</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右：折線圖 -->
+      <section class="card">
+        <h2 class="card-title">
+          <span class="icon">📈</span>
+          體重變化圖
+        </h2>
+        <canvas id="weightChart"></canvas>
+        <div class="chart-legend">
+          <span><span id="lineColorDot" class="legend-dot"></span>每日體重（kg）</span>
+        </div>
+      </section>
+    </div>
+
+    <!-- 下方：紀錄表格 -->
+    <section class="card">
+      <h2 class="card-title">
+        <span class="icon">📅</span>
+        詳細紀錄（11–12 月）
+      </h2>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>體重 (kg)</th>
+              <th>BMI</th>
+            </tr>
+          </thead>
+          <tbody id="recordTbody">
+            <!-- JS 產生 -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      最近一次更新：<span id="lastUpdateText"></span>
+    </footer>
+  </div>
+
+  <script>
+    // ====== 資料區：可以之後自己慢慢往下加 ======
+    const heightCm = 170;
+
+    // 目前提供的紀錄
+    const records = [
+      // month: '11' / '12' 方便之後要分月用
+      { date: '11/16', month: 11, day: 16, weight: 72.9 },
+      { date: '11/17', month: 11, day: 17, weight: 71.7 },
+      { date: '11/18', month: 11, day: 18, weight: 71.7 },
+      { date: '11/19', month: 11, day: 19, weight: 70.85 },
+      { date: '11/20', month: 11, day: 20, weight: 70.55 },
+      { date: '11/21', month: 11, day: 21, weight: 69.6 },
+      { date: '11/22', month: 11, day: 22, weight: 69.55 },
+      { date: '11/23', month: 11, day: 23, weight: 68.9 },
+      { date: '11/25', month: 11, day: 25, weight: 70.1 },
+      { date: '11/26', month: 11, day: 26, weight: 69.55 },
+      { date: '11/29', month: 11, day: 29, weight: 69.25 },
+      { date: '12/1',  month: 12, day: 1,  weight: 69.15 },
+      { date: '12/3',  month: 12, day: 3,  weight: 68.95 },
+      { date: '12/4',  month: 12, day: 4,  weight: 68.25 },
+    ];
+
+    // ====== 小工具 function ======
+    function calcBmi(weightKg, heightCm) {
+      const h = heightCm / 100;
+      return weightKg / (h * h);
+    }
+
+    function bmiCategory(bmi) {
+      if (bmi < 18.5) return '過輕';
+      if (bmi < 24) return '正常';
+      if (bmi < 27) return '過重';
+      if (bmi < 30) return '輕度肥胖';
+      if (bmi < 35) return '中度肥胖';
+      return '重度肥胖';
+    }
+
+    // ====== 初始化畫面文字 ======
+    const heightText = document.getElementById('heightText');
+    const latestWeightText = document.getElementById('latestWeightText');
+    const bmiValueEl = document.getElementById('bmiValue');
+    const bmiTagEl = document.getElementById('bmiTag');
+    const diffFromStartEl = document.getElementById('diffFromStart');
+    const diffFromStartTextEl = document.getElementById('diffFromStartText');
+    const recordCountEl = document.getElementById('recordCount');
+    const lastUpdateTextEl = document.getElementById('lastUpdateText');
+
+    const tbody = document.getElementById('recordTbody');
+
+    // 排序一次（保險用）
+    records.sort((a, b) => {
+      if (a.month === b.month) return a.day - b.day;
+      return a.month - b.month;
+    });
+
+    const firstRecord = records[0];
+    const latestRecord = records[records.length - 1];
+    const latestBmi = calcBmi(latestRecord.weight, heightCm);
+    const diff = latestRecord.weight - firstRecord.weight; // 正：變重；負：變瘦
+
+    // 高度文字
+    heightText.textContent = `${heightCm} cm`;
+
+    // 最近體重
+    latestWeightText.textContent = `${latestRecord.weight.toFixed(2)} kg`;
+
+    // BMI
+    bmiValueEl.textContent = latestBmi.toFixed(2);
+    bmiTagEl.textContent = `(${bmiCategory(latestBmi)})`;
+
+    // 變化
+    const diffAbs = Math.abs(diff).toFixed(2);
+    if (diff < 0) {
+      diffFromStartEl.textContent = `-${diffAbs} kg`;
+      diffFromStartTextEl.className = 'stat-change-positive';
+      diffFromStartTextEl.textContent = '比起點更輕了，辛苦有被看見 ✨';
+    } else if (diff > 0) {
+      diffFromStartEl.textContent = `+${diffAbs} kg`;
+      diffFromStartTextEl.className = 'stat-change-negative';
+      diffFromStartTextEl.textContent = '比起點略重一點，可以再微調一下作息～';
+    } else {
+      diffFromStartEl.textContent = '0 kg';
+      diffFromStartTextEl.className = 'stat-change-positive';
+      diffFromStartTextEl.textContent = '與起點一樣重，先穩定也是一種進步。';
+    }
+
+    // 筆數
+    recordCountEl.textContent = `${records.length} 筆`;
+
+    // 更新時間（這裡簡單用最後一筆的日期字串）
+    lastUpdateTextEl.textContent = `${latestRecord.month} 月 ${latestRecord.day} 日`;
+
+    // ====== 產生表格 ======
+    const hForBmi = heightCm;
+    records.forEach((r) => {
+      const tr = document.createElement('tr');
+      if (r === latestRecord) {
+        tr.classList.add('highlight');
+      }
+
+      const bmi = calcBmi(r.weight, hForBmi);
+
+      const tdDate = document.createElement('td');
+      tdDate.textContent = r.date;
+
+      const tdWeight = document.createElement('td');
+      tdWeight.textContent = r.weight.toFixed(2);
+
+      const tdBmi = document.createElement('td');
+      tdBmi.textContent = bmi.toFixed(2);
+
+      tr.appendChild(tdDate);
+      tr.appendChild(tdWeight);
+      tr.appendChild(tdBmi);
+
+      tbody.appendChild(tr);
+    });
+
+    // ====== 畫圖 ======
+    const ctx = document.getElementById('weightChart').getContext('2d');
+
+    const labels = records.map((r) => r.date);
+    const data = records.map((r) => r.weight);
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: '體重 (kg)',
+            data,
+            tension: 0.3,
+            fill: false,
+            borderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 5
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            ticks: {
+              font: {
+                size: 11
+              }
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'kg'
+            },
+            ticks: {
+              font: {
+                size: 11
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                return `體重：${context.parsed.y.toFixed(2)} kg`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // 把線條顏色塞進 legend 小圓點
+    const lineColorDot = document.getElementById('lineColorDot');
+    const datasetMeta = chart.getDatasetMeta(0);
+    if (datasetMeta && datasetMeta.dataset && datasetMeta.dataset.options) {
+      // Chart.js v4 顏色預設是從樣式表決定，這裡手動取一下
+      const strokeStyle = datasetMeta.dataset.options.borderColor || '#2563eb';
+      lineColorDot.style.background = strokeStyle;
+    }
+  </script>
+</body>
+</html>
