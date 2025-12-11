@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>體重紀錄｜169cm</title>
+  <title>體重紀錄｜170cm</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Chart.js CDN：用來畫體重變化折線圖 -->
@@ -407,9 +407,9 @@
     <header>
       <h1>
         <span class="emoji">📉</span>
-        體重紀錄儀表板
+        窩ㄉ體減肥光榮之路
       </h1>
-      <p>用小小的折線圖，記錄每一次對自己的負責。</p>
+      <p>我要減!!!!!!!看自己ㄉ極限(?)</p>
     </header>
 
     <div class="grid">
@@ -417,7 +417,7 @@
       <section class="card">
         <h2 class="card-title">
           <span class="icon">👤</span>
-          個人與進度概況
+          ABOUT
         </h2>
 
         <div class="profile-row">
@@ -455,7 +455,7 @@
       <section class="card">
         <h2 class="card-title">
           <span class="icon">📈</span>
-          體重變化圖
+          體重折線圖
         </h2>
         <canvas id="weightChart"></canvas>
         <div class="chart-legend">
@@ -468,7 +468,7 @@
     <section class="card">
       <h2 class="card-title">
         <span class="icon">📅</span>
-        詳細紀錄（11–12 月）
+        體重數據（11–12 月）
       </h2>
 
       <div class="table-wrapper">
@@ -513,6 +513,10 @@
       { date: '12/1',  month: 12, day: 1,  weight: 69.15 },
       { date: '12/3',  month: 12, day: 3,  weight: 68.95 },
       { date: '12/4',  month: 12, day: 4,  weight: 68.25 },
+      { date: '12/5',  month: 12, day: 5,  weight: 68.6 },
+      { date: '12/8',  month: 12, day: 8,  weight: 67.85 },
+      { date: '12/10',  month: 12, day: 10,  weight: 67.3 },
+      { date: '12/11',  month: 12, day: 11,  weight: 66.85 },
     ];
 
     // ====== 小工具 function ======
@@ -568,7 +572,7 @@
     if (diff < 0) {
       diffFromStartEl.textContent = `-${diffAbs} kg`;
       diffFromStartTextEl.className = 'stat-change-positive';
-      diffFromStartTextEl.textContent = '比起點更輕了，辛苦有被看見 ✨';
+      diffFromStartTextEl.textContent = 'YAP✨';
     } else if (diff > 0) {
       diffFromStartEl.textContent = `+${diffAbs} kg`;
       diffFromStartTextEl.className = 'stat-change-negative';
