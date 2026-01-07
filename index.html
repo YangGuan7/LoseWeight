@@ -516,7 +516,25 @@
       { date: '12/5',  month: 12, day: 5,  weight: 68.6 },
       { date: '12/8',  month: 12, day: 8,  weight: 67.85 },
       { date: '12/10',  month: 12, day: 10,  weight: 67.3 },
-      { date: '12/11',  month: 12, day: 11,  weight: 66.85 },
+      { date: '12/11',  month: 12, day: 11,  weight: 67 },
+      { date: '12/12',  month: 12, day: 12,  weight: 66.7 },
+      { date: '12/16',  month: 12, day: 16,  weight: 67.9 },
+      { date: '12/17',  month: 12, day: 17,  weight: 66.95 },
+      { date: '12/18',  month: 12, day: 18,  weight: 67.1 },
+      { date: '12/20',  month: 12, day: 20,  weight: 66.6 },
+      { date: '12/21',  month: 12, day: 21,  weight: 66.95 },
+      { date: '12/23',  month: 12, day: 23,  weight: 66.2 },
+      { date: '12/24',  month: 12, day: 24,  weight: 66.65 },
+      { date: '12/25',  month: 12, day: 25,  weight: 66.5 },
+      { date: '12/27',  month: 12, day: 27,  weight: 66.15 },
+      { date: '12/29',  month: 12, day: 29,  weight: 66.95 },
+      { date: '12/31',  month: 12, day: 31,  weight: 66.2 },
+      { date: '1/2',  month: 1, day: 2,  weight: 66.4 },
+      { date: '1/3',  month: 1, day: 3,  weight: 65.95 },
+      { date: '1/4',  month: 1, day: 4,  weight: 66.15 },
+      { date: '1/5',  month: 1, day: 5,  weight: 66.55 },
+      { date: '1/6',  month: 1, day: 6,  weight: 66.4 },
+      { date: '1/7',  month: 1, day: 7,  weight: 65.75 },
     ];
 
     // ====== 小工具 function ======
@@ -547,10 +565,18 @@
     const tbody = document.getElementById('recordTbody');
 
     // 排序一次（保險用）
-    records.sort((a, b) => {
-      if (a.month === b.month) return a.day - b.day;
-      return a.month - b.month;
-    });
+   // 排序一次（保險用）
+// 讓 11,12,1,2... 這種跨年資料能正確排：1 月會被視為 13 月
+const startMonth = records[0].month;
+
+records.sort((a, b) => {
+  const aMonthIndex = a.month + (a.month < startMonth ? 12 : 0);
+  const bMonthIndex = b.month + (b.month < startMonth ? 12 : 0);
+
+  if (aMonthIndex === bMonthIndex) return a.day - b.day;
+  return aMonthIndex - bMonthIndex;
+});
+
 
     const firstRecord = records[0];
     const latestRecord = records[records.length - 1];
