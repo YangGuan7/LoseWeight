@@ -399,7 +399,35 @@
     padding: 6px 6px;
   }
 }
+.chart-filter {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 12px;
+  flex-wrap: wrap;
+}
 
+.chart-filter-btn {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-sub);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.chart-filter-btn:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: var(--primary-soft);
+}
+
+.chart-filter-btn.is-active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
   </style>
 </head>
 <body>
@@ -457,6 +485,11 @@
           <span class="icon">📈</span>
           體重折線圖
         </h2>
+        <div class="chart-filter">
+          <button type="button" class="chart-filter-btn is-active" data-range="2m">近 2 個月</button>
+          <button type="button" class="chart-filter-btn" data-range="6m">近半年</button>
+          <button type="button" class="chart-filter-btn" data-range="all">全部</button>
+        </div>
         <canvas id="weightChart"></canvas>
         <div class="chart-legend">
           <span><span id="lineColorDot" class="legend-dot"></span>每日體重（kg）</span>
@@ -493,231 +526,430 @@
   </div>
 
   <script>
-    // ====== 資料區：可以之後自己慢慢往下加 ======
-    const heightCm = 170;
+    // ====== 資料區 ======
+const heightCm = 170;
+const goalWeight = 60;
 
-    // 目前提供的紀錄
-    const records = [
-      // month: '11' / '12' 方便之後要分月用
-      { date: '11/16', month: 11, day: 16, weight: 72.9 },
-      { date: '11/17', month: 11, day: 17, weight: 71.7 },
-      { date: '11/18', month: 11, day: 18, weight: 71.7 },
-      { date: '11/19', month: 11, day: 19, weight: 70.85 },
-      { date: '11/20', month: 11, day: 20, weight: 70.55 },
-      { date: '11/21', month: 11, day: 21, weight: 69.6 },
-      { date: '11/22', month: 11, day: 22, weight: 69.55 },
-      { date: '11/23', month: 11, day: 23, weight: 68.9 },
-      { date: '11/25', month: 11, day: 25, weight: 70.1 },
-      { date: '11/26', month: 11, day: 26, weight: 69.55 },
-      { date: '11/29', month: 11, day: 29, weight: 69.25 },
-      { date: '12/1',  month: 12, day: 1,  weight: 69.15 },
-      { date: '12/3',  month: 12, day: 3,  weight: 68.95 },
-      { date: '12/4',  month: 12, day: 4,  weight: 68.25 },
-      { date: '12/5',  month: 12, day: 5,  weight: 68.6 },
-      { date: '12/8',  month: 12, day: 8,  weight: 67.85 },
-      { date: '12/10',  month: 12, day: 10,  weight: 67.3 },
-      { date: '12/11',  month: 12, day: 11,  weight: 67 },
-      { date: '12/12',  month: 12, day: 12,  weight: 66.7 },
-      { date: '12/16',  month: 12, day: 16,  weight: 67.9 },
-      { date: '12/17',  month: 12, day: 17,  weight: 66.95 },
-      { date: '12/18',  month: 12, day: 18,  weight: 67.1 },
-      { date: '12/20',  month: 12, day: 20,  weight: 66.6 },
-      { date: '12/21',  month: 12, day: 21,  weight: 66.95 },
-      { date: '12/23',  month: 12, day: 23,  weight: 66.2 },
-      { date: '12/24',  month: 12, day: 24,  weight: 66.65 },
-      { date: '12/25',  month: 12, day: 25,  weight: 66.5 },
-      { date: '12/27',  month: 12, day: 27,  weight: 66.15 },
-      { date: '12/29',  month: 12, day: 29,  weight: 66.95 },
-      { date: '12/31',  month: 12, day: 31,  weight: 66.2 },
-      { date: '1/2',  month: 1, day: 2,  weight: 66.4 },
-      { date: '1/3',  month: 1, day: 3,  weight: 65.95 },
-      { date: '1/4',  month: 1, day: 4,  weight: 66.15 },
-      { date: '1/5',  month: 1, day: 5,  weight: 66.55 },
-      { date: '1/6',  month: 1, day: 6,  weight: 66.4 },
-      { date: '1/7',  month: 1, day: 7,  weight: 65.75 },
-      { date: '1/8',  month: 1, day: 8,  weight: 65.5 },
-      { date: '1/9',  month: 1, day: 9,  weight: 65.7 },
-      { date: '1/10',  month: 1, day: 10,  weight: 65.4 },
-      { date: '1/11',  month: 1, day: 11,  weight: 65.55},
-      { date: '1/12',  month: 1, day: 12,  weight: 65.55},
-      { date: '1/13',  month: 1, day: 13,  weight: 65.6},
-      { date: '1/14',  month: 1, day: 14,  weight: 65.5},
-      { date: '1/15',  month: 1, day: 15,  weight: 65.1},
-      { date: '1/16',  month: 1, day: 16,  weight: 64.5},
-    ];
+const records = [
+  { month: 11, day: 16, weight: 72.9 },
+  { month: 11, day: 17, weight: 71.7 },
+  { month: 11, day: 18, weight: 71.7 },
+  { month: 11, day: 19, weight: 70.85 },
+  { month: 11, day: 20, weight: 70.55 },
+  { month: 11, day: 21, weight: 69.6 },
+  { month: 11, day: 22, weight: 69.55 },
+  { month: 11, day: 23, weight: 68.9 },
+  { month: 11, day: 25, weight: 70.1 },
+  { month: 11, day: 26, weight: 69.55 },
+  { month: 11, day: 29, weight: 69.25 },
 
-    // ====== 小工具 function ======
-    function calcBmi(weightKg, heightCm) {
-      const h = heightCm / 100;
-      return weightKg / (h * h);
-    }
+  { month: 12, day: 1, weight: 69.15 },
+  { month: 12, day: 3, weight: 68.95 },
+  { month: 12, day: 4, weight: 68.25 },
+  { month: 12, day: 5, weight: 68.6 },
+  { month: 12, day: 8, weight: 67.85 },
+  { month: 12, day: 10, weight: 67.3 },
+  { month: 12, day: 11, weight: 67 },
+  { month: 12, day: 12, weight: 66.7 },
+  { month: 12, day: 16, weight: 67.9 },
+  { month: 12, day: 17, weight: 66.95 },
+  { month: 12, day: 18, weight: 67.1 },
+  { month: 12, day: 20, weight: 66.6 },
+  { month: 12, day: 21, weight: 66.95 },
+  { month: 12, day: 23, weight: 66.2 },
+  { month: 12, day: 24, weight: 66.65 },
+  { month: 12, day: 25, weight: 66.5 },
+  { month: 12, day: 27, weight: 66.15 },
+  { month: 12, day: 29, weight: 66.95 },
+  { month: 12, day: 31, weight: 66.2 },
 
-    function bmiCategory(bmi) {
-      if (bmi < 18.5) return '過輕';
-      if (bmi < 24) return '正常';
-      if (bmi < 27) return '過重';
-      if (bmi < 30) return '輕度肥胖';
-      if (bmi < 35) return '中度肥胖';
-      return '重度肥胖';
-    }
+  { month: 1, day: 2, weight: 66.4 },
+  { month: 1, day: 3, weight: 65.95 },
+  { month: 1, day: 4, weight: 66.15 },
+  { month: 1, day: 5, weight: 66.55 },
+  { month: 1, day: 6, weight: 66.4 },
+  { month: 1, day: 7, weight: 65.75 },
+  { month: 1, day: 8, weight: 65.5 },
+  { month: 1, day: 9, weight: 65.7 },
+  { month: 1, day: 10, weight: 65.4 },
+  { month: 1, day: 11, weight: 65.55 },
+  { month: 1, day: 12, weight: 65.55 },
+  { month: 1, day: 13, weight: 65.6 },
+  { month: 1, day: 14, weight: 65.5 },
+  { month: 1, day: 15, weight: 65.1 },
+  { month: 1, day: 16, weight: 64.5 },
+  { month: 1, day: 17, weight: 64.1 },
+  { month: 1, day: 18, weight: 64.35 },
+  { month: 1, day: 19, weight: 65.05 },
+  { month: 1, day: 20, weight: 64.5 },
+  { month: 1, day: 21, weight: 64.6 },
+  { month: 1, day: 27, weight: 62.4 },
+  { month: 1, day: 29, weight: 64.3 },
+  { month: 1, day: 31, weight: 64.95 },
 
-    // ====== 初始化畫面文字 ======
-    const heightText = document.getElementById('heightText');
-    const latestWeightText = document.getElementById('latestWeightText');
-    const bmiValueEl = document.getElementById('bmiValue');
-    const bmiTagEl = document.getElementById('bmiTag');
-    const diffFromStartEl = document.getElementById('diffFromStart');
-    const diffFromStartTextEl = document.getElementById('diffFromStartText');
-    const recordCountEl = document.getElementById('recordCount');
-    const lastUpdateTextEl = document.getElementById('lastUpdateText');
+  { month: 2, day: 9, weight: 64.5 },
+  { month: 2, day: 10, weight: 63.65 },
+  { month: 2, day: 11, weight: 64.4 },
+  { month: 2, day: 12, weight: 64.4 },
+  { month: 2, day: 22, weight: 64.4 },
+  { month: 2, day: 24, weight: 65.05 },
+  { month: 2, day: 25, weight: 66.55 },
+  { month: 2, day: 26, weight: 67.25 },
 
-    const tbody = document.getElementById('recordTbody');
+  { month: 3, day: 3, weight: 67.9 },
+  { month: 3, day: 4, weight: 66.3 },
+  { month: 3, day: 5, weight: 66.4 },
+  { month: 3, day: 6, weight: 65.85 },
+  { month: 3, day: 7, weight: 65.35 },
+  { month: 3, day: 8, weight: 65.8 },
+  { month: 3, day: 9, weight: 65.8 },
+  { month: 3, day: 10, weight: 65.25 },
+  { month: 3, day: 11, weight: 64.7 },
+  { month: 3, day: 12, weight: 64.55 },
+  { month: 3, day: 16, weight: 64.85 },
+  { month: 3, day: 17, weight: 64.2 },
+  { month: 3, day: 18, weight: 64.1 },
+  { month: 3, day: 19, weight: 64.1 },
+  { month: 3, day: 20, weight: 63.65 },
+  { month: 3, day: 22, weight: 64 },
+  { month: 3, day: 23, weight: 64.5 },
+  { month: 3, day: 24, weight: 63.45 },
+  { month: 3, day: 25, weight: 63.25 },
+  { month: 3, day: 26, weight: 62.45 },
+  { month: 3, day: 27, weight: 62.95 },
+  { month: 3, day: 28, weight: 62.5 },
+  { month: 3, day: 29, weight: 62.85 },
+  { month: 3, day: 30, weight: 62.7 },
+  { month: 3, day: 31, weight: 62.5 },
+  { month: 4, day: 1, weight: 62.1 },
+  { month: 4, day: 2, weight: 61.8 },
+  { month: 4, day: 10, weight: 63.9 },
+  { month: 4, day: 11, weight: 63.75 },
+  { month: 4, day: 13, weight: 63.5 },
+  { month: 4, day: 17, weight: 62.5 },
+  { month: 4, day: 23, weight: 62.7 },
+  { month: 4, day: 24, weight: 62.55 },
+  { month: 4, day: 25, weight: 61.75 },
+  { month: 4, day: 26, weight: 61.45 },
+  { month: 4, day: 27, weight: 61.85 },
+  { month: 4, day: 28, weight: 62.1 },
+  { month: 4, day: 29, weight: 62.2 },
+  { month: 4, day: 30, weight: 61.85 },
+  
+  { month: 5, day: 1, weight: 61.5 },
+  { month: 5, day: 4, weight: 62.25 },
+  { month: 5, day: 5, weight: 62.25 },
+];
 
-    // 排序一次（保險用）
-   // 排序一次（保險用）
-// 讓 11,12,1,2... 這種跨年資料能正確排：1 月會被視為 13 月
+// ====== 小工具 function ======
+function formatDate(record) {
+  return `${record.month}/${record.day}`;
+}
+
+function calcBmi(weightKg, heightCm) {
+  const h = heightCm / 100;
+  return weightKg / (h * h);
+}
+
+function bmiCategory(bmi) {
+  if (bmi < 18.5) return '過輕';
+  if (bmi < 24) return '正常';
+  if (bmi < 27) return '過重';
+  if (bmi < 30) return '輕度肥胖';
+  if (bmi < 35) return '中度肥胖';
+  return '重度肥胖';
+}
+
+function getWeightDiffText(currentWeight, previousWeight) {
+  if (previousWeight === null || previousWeight === undefined) {
+    return '第一筆紀錄';
+  }
+
+  const diff = currentWeight - previousWeight;
+
+  if (diff < 0) {
+    return `比上一筆少 ${Math.abs(diff).toFixed(2)} kg`;
+  }
+
+  if (diff > 0) {
+    return `比上一筆多 ${diff.toFixed(2)} kg`;
+  }
+
+  return '跟上一筆一樣';
+}
+
+// ====== DOM ======
+const heightText = document.getElementById('heightText');
+const latestWeightText = document.getElementById('latestWeightText');
+const bmiValueEl = document.getElementById('bmiValue');
+const bmiTagEl = document.getElementById('bmiTag');
+const diffFromStartEl = document.getElementById('diffFromStart');
+const diffFromStartTextEl = document.getElementById('diffFromStartText');
+const recordCountEl = document.getElementById('recordCount');
+const lastUpdateTextEl = document.getElementById('lastUpdateText');
+const tbody = document.getElementById('recordTbody');
+
+// ====== 排序：支援 11、12、1 跨年 ======
 const startMonth = records[0].month;
 
 records.sort((a, b) => {
   const aMonthIndex = a.month + (a.month < startMonth ? 12 : 0);
   const bMonthIndex = b.month + (b.month < startMonth ? 12 : 0);
 
-  if (aMonthIndex === bMonthIndex) return a.day - b.day;
+  if (aMonthIndex === bMonthIndex) {
+    return a.day - b.day;
+  }
+
   return aMonthIndex - bMonthIndex;
 });
 
+// ====== 基本資料 ======
+// ====== DOM ======
+const chartFilterBtns = document.querySelectorAll('.chart-filter-btn');
 
-    const firstRecord = records[0];
-    const latestRecord = records[records.length - 1];
-    const latestBmi = calcBmi(latestRecord.weight, heightCm);
-    const diff = latestRecord.weight - firstRecord.weight; // 正：變重；負：變瘦
+// ====== 日期處理：補年份，讓近 2 個月 / 近半年可以判斷 ======
+function getRecordDate(record) {
+  const startYear = 2025;
+  const year = record.month < startMonth ? startYear + 1 : startYear;
+  return new Date(year, record.month - 1, record.day);
+}
 
-    // 高度文字
-    heightText.textContent = `${heightCm} cm`;
+function getRangeRecords(range) {
+  if (range === 'all') return records;
 
-    // 最近體重
-    latestWeightText.textContent = `${latestRecord.weight.toFixed(2)} kg`;
+  const latestDate = getRecordDate(records[records.length - 1]);
+  const startDate = new Date(latestDate);
 
-    // BMI
-    bmiValueEl.textContent = latestBmi.toFixed(2);
-    bmiTagEl.textContent = `(${bmiCategory(latestBmi)})`;
+  if (range === '2m') {
+    startDate.setMonth(startDate.getMonth() - 2);
+  }
 
-    // 變化
-    const diffAbs = Math.abs(diff).toFixed(2);
-    if (diff < 0) {
-      diffFromStartEl.textContent = `-${diffAbs} kg`;
-      diffFromStartTextEl.className = 'stat-change-positive';
-      diffFromStartTextEl.textContent = 'YAP✨';
-    } else if (diff > 0) {
-      diffFromStartEl.textContent = `+${diffAbs} kg`;
-      diffFromStartTextEl.className = 'stat-change-negative';
-      diffFromStartTextEl.textContent = '比起點略重一點，可以再微調一下作息～';
-    } else {
-      diffFromStartEl.textContent = '0 kg';
-      diffFromStartTextEl.className = 'stat-change-positive';
-      diffFromStartTextEl.textContent = '與起點一樣重，先穩定也是一種進步。';
+  if (range === '6m') {
+    startDate.setMonth(startDate.getMonth() - 6);
+  }
+
+  return records.filter((record) => getRecordDate(record) >= startDate);
+}
+
+function updateSummary(currentRecords) {
+  const firstRecord = currentRecords[0];
+  const latestRecord = currentRecords[currentRecords.length - 1];
+  const latestBmi = calcBmi(latestRecord.weight, heightCm);
+  const diff = latestRecord.weight - firstRecord.weight;
+
+  heightText.textContent = `${heightCm} cm`;
+  latestWeightText.textContent = `${latestRecord.weight.toFixed(2)} kg`;
+
+  bmiValueEl.textContent = latestBmi.toFixed(2);
+  bmiTagEl.textContent = `(${bmiCategory(latestBmi)})`;
+
+  const diffAbs = Math.abs(diff).toFixed(2);
+
+  if (diff < 0) {
+    diffFromStartEl.textContent = `-${diffAbs} kg`;
+    diffFromStartTextEl.className = 'stat-change-positive';
+    diffFromStartTextEl.textContent = 'YAP✨';
+  } else if (diff > 0) {
+    diffFromStartEl.textContent = `+${diffAbs} kg`;
+    diffFromStartTextEl.className = 'stat-change-negative';
+    diffFromStartTextEl.textContent = '這段期間有微微上升，可以再觀察一下～';
+  } else {
+    diffFromStartEl.textContent = '0 kg';
+    diffFromStartTextEl.className = 'stat-change-positive';
+    diffFromStartTextEl.textContent = '這段期間維持不變。';
+  }
+
+  recordCountEl.textContent = `${currentRecords.length} 筆`;
+  lastUpdateTextEl.textContent = `${latestRecord.month} 月 ${latestRecord.day} 日`;
+}
+
+function renderTable(currentRecords) {
+  tbody.innerHTML = '';
+
+  const latestRecord = currentRecords[currentRecords.length - 1];
+
+  currentRecords.forEach((record, index) => {
+    const tr = document.createElement('tr');
+
+    if (record === latestRecord) {
+      tr.classList.add('highlight');
     }
 
-    // 筆數
-    recordCountEl.textContent = `${records.length} 筆`;
+    const previousRecord = currentRecords[index - 1];
+    const bmi = calcBmi(record.weight, heightCm);
 
-    // 更新時間（這裡簡單用最後一筆的日期字串）
-    lastUpdateTextEl.textContent = `${latestRecord.month} 月 ${latestRecord.day} 日`;
+    const tdDate = document.createElement('td');
+    tdDate.textContent = formatDate(record);
 
-    // ====== 產生表格 ======
-    const hForBmi = heightCm;
-    records.forEach((r) => {
-      const tr = document.createElement('tr');
-      if (r === latestRecord) {
-        tr.classList.add('highlight');
+    const tdWeight = document.createElement('td');
+    tdWeight.textContent = record.weight.toFixed(2);
+
+    const tdBmi = document.createElement('td');
+    tdBmi.textContent = bmi.toFixed(2);
+
+    tr.title = getWeightDiffText(
+      record.weight,
+      previousRecord ? previousRecord.weight : null
+    );
+
+    tr.appendChild(tdDate);
+    tr.appendChild(tdWeight);
+    tr.appendChild(tdBmi);
+
+    tbody.appendChild(tr);
+  });
+}
+
+// ====== 目標線 plugin ======
+const goalLinePlugin = {
+  id: 'goalLinePlugin',
+  afterDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    const y = scales.y.getPixelForValue(goalWeight);
+
+    if (y < chartArea.top || y > chartArea.bottom) return;
+
+    ctx.save();
+
+    ctx.beginPath();
+    ctx.setLineDash([6, 6]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#f97373';
+    ctx.moveTo(chartArea.left, y);
+    ctx.lineTo(chartArea.right, y);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#f97373';
+    ctx.font = '12px sans-serif';
+    ctx.fillText(`${goalWeight}kg 目標`, chartArea.left + 8, y - 8);
+
+    ctx.restore();
+  }
+};
+
+// ====== 畫圖 ======
+const ctx = document.getElementById('weightChart').getContext('2d');
+
+let currentRecords = getRangeRecords('2m');
+
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: currentRecords.map(formatDate),
+    datasets: [
+      {
+        label: '體重 (kg)',
+        data: currentRecords.map((record) => record.weight),
+        tension: 0.3,
+        fill: false,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        borderColor: '#3056d3',
+        pointBackgroundColor: '#ffffff',
+        pointBorderColor: '#3056d3'
       }
-
-      const bmi = calcBmi(r.weight, hForBmi);
-
-      const tdDate = document.createElement('td');
-      tdDate.textContent = r.date;
-
-      const tdWeight = document.createElement('td');
-      tdWeight.textContent = r.weight.toFixed(2);
-
-      const tdBmi = document.createElement('td');
-      tdBmi.textContent = bmi.toFixed(2);
-
-      tr.appendChild(tdDate);
-      tr.appendChild(tdWeight);
-      tr.appendChild(tdBmi);
-
-      tbody.appendChild(tr);
-    });
-
-    // ====== 畫圖 ======
-    const ctx = document.getElementById('weightChart').getContext('2d');
-
-    const labels = records.map((r) => r.date);
-    const data = records.map((r) => r.weight);
-
-    const chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          {
-            label: '體重 (kg)',
-            data,
-            tension: 0.3,
-            fill: false,
-            borderWidth: 2,
-            pointRadius: 3,
-            pointHoverRadius: 5
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false
+    },
+    scales: {
+      x: {
+        ticks: {
+          font: {
+            size: 11
           }
-        ]
+        }
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            ticks: {
-              font: {
-                size: 11
-              }
-            }
-          },
-          y: {
-            title: {
-              display: true,
-              text: 'kg'
-            },
-            ticks: {
-              font: {
-                size: 11
-              }
-            }
-          }
+      y: {
+        suggestedMin: goalWeight - 2,
+        title: {
+          display: true,
+          text: 'kg'
         },
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            callbacks: {
-              label: function (context) {
-                return `體重：${context.parsed.y.toFixed(2)} kg`;
-              }
-            }
+        ticks: {
+          font: {
+            size: 11
           }
         }
       }
-    });
+    },
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        callbacks: {
+          label(context) {
+            const index = context.dataIndex;
+            const currentRecord = currentRecords[index];
+            const previousRecord = currentRecords[index - 1];
 
-    // 把線條顏色塞進 legend 小圓點
-    const lineColorDot = document.getElementById('lineColorDot');
-    const datasetMeta = chart.getDatasetMeta(0);
-    if (datasetMeta && datasetMeta.dataset && datasetMeta.dataset.options) {
-      // Chart.js v4 顏色預設是從樣式表決定，這裡手動取一下
-      const strokeStyle = datasetMeta.dataset.options.borderColor || '#2563eb';
-      lineColorDot.style.background = strokeStyle;
+            const weightText = `體重：${currentRecord.weight.toFixed(2)} kg`;
+            const diffText = getWeightDiffText(
+              currentRecord.weight,
+              previousRecord ? previousRecord.weight : null
+            );
+
+            return [weightText, diffText];
+          },
+          afterLabel(context) {
+            const currentWeight = currentRecords[context.dataIndex].weight;
+            const distance = currentWeight - goalWeight;
+
+            if (distance > 0) {
+              return `距離 ${goalWeight}kg 還差 ${distance.toFixed(2)} kg`;
+            }
+
+            if (distance < 0) {
+              return `已低於目標 ${Math.abs(distance).toFixed(2)} kg`;
+            }
+
+            return `剛好達標！`;
+          }
+        }
+      }
     }
+  },
+  plugins: [goalLinePlugin]
+});
+
+function updateChart(range) {
+  currentRecords = getRangeRecords(range);
+
+  chart.data.labels = currentRecords.map(formatDate);
+  chart.data.datasets[0].data = currentRecords.map((record) => record.weight);
+  chart.update();
+
+  updateSummary(currentRecords);
+  renderTable(currentRecords);
+}
+
+// ====== 篩選按鈕 ======
+chartFilterBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    chartFilterBtns.forEach((item) => item.classList.remove('is-active'));
+    btn.classList.add('is-active');
+
+    updateChart(btn.dataset.range);
+  });
+});
+
+// ====== 初始畫面：近 2 個月 ======
+updateChart('2m');
+
+// ====== legend 小圓點顏色 ======
+const lineColorDot = document.getElementById('lineColorDot');
+
+if (lineColorDot) {
+  lineColorDot.style.background = '#3056d3';
+}
   </script>
 </body>
 </html>
